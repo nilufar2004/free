@@ -1,0 +1,52 @@
+services:
+  db:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sardoba_bot
+      MYSQL_USER: sardoba
+      MYSQL_PASSWORD: sardoba
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  bot:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: sardoba_bot
+      DB_USER: sardoba
+      DB_PASSWORD: sardoba
+    # No ports needed (Telegram polling). Add ports only if you expose something.
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    restart: unless-stopped
+    profiles: ["tools"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root
+    ports:
+      - "8080:80"
+
+volumes:
+  mysql_data:

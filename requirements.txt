@@ -1,0 +1,6 @@
+python-telegram-bot==20.7
+mysql-connector-python
+openpyxl
+reportlab
+python-dotenv
+pandas
